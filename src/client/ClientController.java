@@ -4,17 +4,22 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Base64;
 
 import shared.Notification;
 import shared.NotificationStatus;
 import view.ChatView;
 import view.LoginView;
 
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+
 public class ClientController {
 
 	private int notificationsPort = 32323;
 	private String serverAddress = "localhost";
-
+	private String encryptionKey = "SECRET_KEY";
 	private String username = null;
 
 	private LoginView loginView;
@@ -54,16 +59,35 @@ public class ClientController {
 		clientListenerThread.start(); // start thread in the background
 		this.isMessageListenerInitialized = true;
 	}
+	private String encryptMessage(String message) {
+		StringBuilder encryptedText = new StringBuilder();
+		for (int i = 0; i < message.length(); i++) {
+			char currentChar = message.charAt(i);
+			if (Character.isLetter(currentChar)) {
+				char encryptedChar = (char) (currentChar + encryptionKey.length());
+				encryptedText.append(encryptedChar);
+			} else {
+				encryptedText.append(currentChar);
+			}
+		}
+		return "M;" + encryptedText;
+
+	}
+
+
 
 	public void sendMessage(Message msg,String recipientPassed) throws Exception{
 		String delimiter = ";";
+		String encrypM = encryptMessage(msg.getData());
 		String data = "M"+delimiter+this.username+delimiter+this.recipient+delimiter+msg.getData();
+		System.out.println("mã hóa tin: "+encrypM);
 		DatagramSocket socket = new DatagramSocket();
 		byte[] buffer = data.getBytes();
 		DatagramPacket packet = new DatagramPacket(buffer, buffer.length, InetAddress.getByName(this.serverAddress), this.notificationsPort); 																												// paketa
 		socket.send(packet);
 		socket.close();
 	}
+
 
 	public void notifyServer(NotificationStatus type) throws Exception{
 		DatagramSocket socket = new DatagramSocket();

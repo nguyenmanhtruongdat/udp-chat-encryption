@@ -36,17 +36,17 @@ public class ChatView extends Stage{
 	private Label lblChatInfo = new Label();
 	
 	
-	private Label lblRecipientName = new Label("Recipient name:");
+	private Label lblRecipientName = new Label("Tên người nhận:");
 	private TextField tfRecipient = new TextField();
 	private ComboBox<String> cbRecipient = new ComboBox<>();
-	private Button btnChangeRecipient = new Button("Change recipient");
-	private Label lblStatus = new Label("You currently can't receive any message");
-	
-	
+	private Button btnChangeRecipient = new Button("Chat ngay");
+	private Label lblStatus = new Label("Hiện tại chưa thể nhận tin nhắn");
+
+	private String encryptionKey = "SECRET_KEY";
 	private ListView<Text> chatWindow = new ListView<>();
 	
 	private TextField tfInput = new TextField();
-	private Button btnChat = new Button("Send");
+	private Button btnChat = new Button("Gửi");
 	
 	private Label lblNotification = new Label();
 	private Button btnDismissNotification = new Button("X");
@@ -54,7 +54,7 @@ public class ChatView extends Stage{
 	private BorderPane bp = new BorderPane();
 	
 	private ClientController controller = ClientController.getInstance();
-	
+
 	public ChatView() {
 		
 		
@@ -117,12 +117,12 @@ public class ChatView extends Stage{
 			String chatText = this.tfInput.getText();
 			
 			if (chatText.contains(";")) {
-				this.addAlert("Character not allowed","Characted [ ; ] is used as delimiter and is not allowed to be in message");
+				this.addAlert("Kí tự không hợp lệ","[ ; ] được sử dụng làm dấu phân cách và không được phép có trong tin nhắn");
 				return;
 			}
 			String recipient = this.cbRecipient.getSelectionModel().getSelectedItem();
 			if (recipient.isEmpty()) {
-				this.addAlert("No recipient selected","In order to send message you must select a recipient");
+				this.addAlert("Không có người nhận nào được chọn","Để gửi tin nhắn bạn phải chọn người nhận");
 				return;
 			}
 			
@@ -149,9 +149,9 @@ public class ChatView extends Stage{
 			this.chatWindow.refresh();
 			
 			if (!newRecipient.isEmpty()) {
-				this.lblStatus.setText("You can receive messages from "+newRecipient);
+				this.lblStatus.setText("Bạn có thể nhận tin nhắn từ "+newRecipient);
 			} else {
-				this.lblStatus.setText("You currently can't receive any message");
+				this.lblStatus.setText("Hiện tại không thể nhận tin nhắn nào");
 			}
 			
 		});
@@ -169,7 +169,7 @@ public class ChatView extends Stage{
 		});
 		
 	}
-	
+
 	public void addAlert(String title, String description) {
 		Alert alert = new Alert(AlertType.WARNING);
 		alert.setTitle("Warning");
@@ -180,28 +180,72 @@ public class ChatView extends Stage{
 	}
 	
 	public void loadData() {
-		this.lblChatInfo.setText("Signed in as " + this.controller.getUsername());
+		this.lblChatInfo.setText("Đăng nhập với tư cách: " + this.controller.getUsername());
 	}
-	
-	public void addMessage(Message msg, boolean bold) {
-		
-		Platform.runLater(new Runnable() {
-		
-			@Override
-			public void run() {	
-				Text txt = new Text(msg.toString());
-				if (bold) {
-					txt.setFont(Font.font("Verdana",FontWeight.EXTRA_LIGHT,12));
+	private String decryptMessage(String encryptedMessage) {
+		StringBuilder decryptedText = new StringBuilder();
+
+		// Split the message into username and actual message
+		String[] parts = encryptedMessage.split(":", 2);
+
+		if (parts.length == 2) {
+			String username = parts[0].trim();
+			String message = parts[1].trim();
+
+			for (int i = 0; i < message.length(); i++) {
+				char currentChar = message.charAt(i);
+				char decryptedChar;
+
+				if (Character.isLetter(currentChar)) {
+					decryptedChar = (char) (currentChar - encryptionKey.length());
+
+					// Wrap around for characters outside the alphabet
+					if (Character.isUpperCase(currentChar) && decryptedChar < 'A') {
+						decryptedChar = (char) (decryptedChar + 26);
+					} else if (Character.isLowerCase(currentChar) && decryptedChar < 'a') {
+						decryptedChar = (char) (decryptedChar + 26);
+					}
 				} else {
-					txt.setFont(Font.font("Verdana",FontWeight.NORMAL,13));
+					decryptedChar = currentChar;
 				}
-				chatWindow.getItems().add(txt);			
-				chatWindow.refresh();	
+
+				decryptedText.append(decryptedChar);
+			}
+
+			return username + ": " + decryptedText.toString();
+		} else {
+			return encryptedMessage;
+		}
+	}
+	public void addMessage(Message msg, boolean bold) {
+
+		Platform.runLater(new Runnable() {
+
+			@Override
+			public void run() {
+				String encryptedData = msg.getData();
+				System.out.println("Encrypted Data: " + encryptedData);
+
+				String decryptedMessage = decryptMessage(encryptedData);
+				System.out.println("Decrypted Message: " + decryptedMessage);
+				String tin = "[" + msg.getTimestamp() + "] - " + msg.getSender() + ": " + msg.getData();
+				Text txt = new Text(tin);
+				System.out.println("Final Text: " + txt.getText());
+
+				if (bold) {
+					txt.setFont(Font.font("Verdana", FontWeight.EXTRA_LIGHT, 12));
+				} else {
+					txt.setFont(Font.font("Verdana", FontWeight.NORMAL, 13));
+				}
+
+				chatWindow.getItems().add(txt);
+				chatWindow.refresh();
 				scrollToBottom();
 			};
-				
+
+
 		});
-		
+
 	}
 	
 	public void addUserToListOfOnlineUsers(String user) {
@@ -230,7 +274,7 @@ public class ChatView extends Stage{
 			@Override
 			public void run() {	
 				btnDismissNotification.setVisible(true);
-				lblNotification.setText(msg);	
+				lblNotification.setText(msg);
 			};
 				
 		});		

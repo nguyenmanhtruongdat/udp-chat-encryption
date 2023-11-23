@@ -20,7 +20,7 @@ public class LoginView extends Stage {
 	private BorderPane bp = new BorderPane();
 	private ClientController controller = ClientController.getInstance();
 	
-	private Label lblUsernmae = new Label("Username:");
+	private Label lblUsernmae = new Label("Nhập tên người dùng:");
 	private TextField tfUsername = new TextField();
 	
 	private Button btnConnect = new Button("Connect");
@@ -33,12 +33,12 @@ public class LoginView extends Stage {
 		vbCenter.getChildren().addAll(lblUsernmae,tfUsername,btnConnect);
 		vbCenter.setAlignment(Pos.CENTER);
 		// end top
-		
+		btnConnect.setStyle("-fx-background-color: #5DADE2;");  // Green
 		
 		bp.setCenter(vbCenter);
 		Scene sc = new Scene(bp,250,400);
 		this.setScene(sc);
-		this.setTitle("UDP Chat - Login");
+		this.setTitle("Login");
 		this.setActions();
 		this.setResizable(false);
 	}

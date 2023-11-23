@@ -8,7 +8,20 @@ public class Message {
 	private String data;
 	private String sender;
 	private String timestamp;
-	
+	private String orgMessage;
+
+	public void setTimestamp(String timestamp) {
+		this.timestamp = timestamp;
+	}
+
+	public String getOrgMessage() {
+		return orgMessage;
+	}
+
+	public void setOrgMessage(String orgMessage) {
+		this.orgMessage = orgMessage;
+	}
+
 	public Message(String data, String sender) {
 		super();
 		this.data = data;
